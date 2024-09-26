@@ -81,7 +81,7 @@ class MultiheadAttentionBlock(nn.Module):
 
         return attention_scores @ V
 
-    def forward(self, x, mask)
+    def forward(self, x, mask):
 
         
 
