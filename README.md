@@ -1,2 +1,2 @@
 # Transformers
-Replication of the transformer architecture from the 2017 paper "Attention is All You Need"
+Playing around with the default transformer model. (building the architecture, training & inference)
