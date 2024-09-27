@@ -24,7 +24,6 @@ class InputEmbeddings(nn.Module):
     def forward(self, x): #x should be a LongTensor of ids
         return self.embedding_matrix(x) * math.sqrt(self.d_model)
    
-        
 class PositionalEncodings(nn.Module):
     
     def __init__(self, seq_len, d_model, dropout): #takes in seq_len & d_model
@@ -81,7 +80,9 @@ class MultiheadAttentionBlock(nn.Module):
 
         return attention_scores @ V
 
-    def forward(self, x, mask):
+class Transformer(nn.Transformer): # nn.Transformer doesn't have input embedding & pos encoding
+    def __init__(self):
+        super().__init__()
 
         
 
