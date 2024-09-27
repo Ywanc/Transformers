@@ -1,7 +1,5 @@
 '''
-My attempt at replicating the transformer architecture from the "Attention Is All You Need"
-with reference from 
-https://github.com/hkproj/pytorch-transformer, PyTorch Documentation, ChatGPT
+the transformer model using nn.Transformer 
 '''
 import torch
 from torch import nn
@@ -26,7 +24,7 @@ class InputEmbeddings(nn.Module):
    
 class PositionalEncodings(nn.Module):
     
-    def __init__(self, d_model, dropout, max_len=5000): #takes in seq_len & d_model
+    def __init__(self, d_model, dropout, max_len=5000): #takes d_model, dropout, max_len computed until 5000 sequences/tokens
         super().__init__()
         self.max_len = max_len
         self.d_model = d_model
@@ -83,25 +81,67 @@ class MultiheadAttentionBlock(nn.Module):
 class Transformer(nn.Transformer):
 
     def __init__(self, vocab_size, d_model, head, nhid, nlayers, dropout=0.5):
-
         #initialises nn.Transformer with following parameters
         super().__init__(
             d_model=d_model, nhead=head, dim_feedforward=nhid,
-            num_encoder_layers=nlayers, dropout=droupout
+            num_encoder_layers=nlayers, num_decoder_layers=nlayers, dropout=dropout
         )
-
         self.model_type = 'Transformer' #simple labelling attribute
-
         self.mask = None # masking
+        self.embedding = nn.Embedding(vocab_size, d_model) #create embedding matrix of (vocab_size, d_model)
+        self.pos_encoder= PositionalEncodings(d_model ,dropout) # create pe_matrix 
+        self.d_model = d_model
+        self.init_weights() #custom weight initialisation
+        self.projection_layer = nn.Linear(d_model, vocab_size) #projects embedding to vocab_size for softmax
 
-        self.pos_encoder = PositionalEncodings(d_model ,dropout)
+    def init_weights():
+        initrange = 0.1
+        #uniform initialisation for embedding matrix
+        nn.init.uniform_(self.embedding_marix.weight, -initrange, initrange)
+        # zero initialisation for projection layer biases
+        nn.init.zeros_(self.projection_layer.bias)
+        # uniform intialisation for projection layer's weights
+        nn.init.uniform_(self.projection_layer.weight, -initrange, initrange)
+
+    def forward(self, src, tgt, src_mask, tgt_mask): # src = seq to encoder, tgt = seq to encoder 
+
+        #embedding for encoder & decoder inputs
+        src = self.embedding(src) * math.sqrt(self.d_model)
+        tgt = self.embedding(tgt) * math.sqrt(self.d_model)
+
+        # add positional_encoding
+        src = self.pos_encoder(src)
+        tgt = self.pos_encoder(tgt)
+        
+        #pass src & tgt through the transformer, with masking
+        # outputs the output embeddings
+        output_embeddings = self.transformer(src, tgt, src_mask=src_mask, tgt_mask = tgt_mask)
+
+        output_logits = self.projection_layer(output_embeddings)
+
+        return F.log_softmax(output_logits, dim=-1)
+
+    # Function to generate the decoder mask to prevent looking at future tokens
+    def generate_square_subsequent_mask(self, sz):
+        # Generate a mask that prevents attending to future tokens
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        return mask
+
+            
+            
+
+            
 
 
-        self.embedding_matrix = nn.Embedding()
+
+
+        
         
 
-    
+        
 
+        
 
         
 
