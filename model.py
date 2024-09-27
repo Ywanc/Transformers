@@ -26,14 +26,14 @@ class InputEmbeddings(nn.Module):
    
 class PositionalEncodings(nn.Module):
     
-    def __init__(self, seq_len, d_model, dropout): #takes in seq_len & d_model
+    def __init__(self, d_model, dropout, max_len=5000): #takes in seq_len & d_model
         super().__init__()
-        self.seq_len = seq_len
+        self.max_len = max_len
         self.d_model = d_model
         self.dropout = nn.Dropout(dropout) #randomly zeroes elements of the tensor. to prevent overfitting
 
-        pe_matrix = torch.zeros(seq_len, d_model) # (seq_len, d_model)
-        pos = torch.arange(0,seq_len).unsqueeze(1) # (seq_len, 1)                           
+        pe_matrix = torch.zeros(max_len, d_model) # (max_len, d_model)
+        pos = torch.arange(0, max_len).unsqueeze(1) # (max_len, 1)                           
 
         #create tensor of 2i from i=0 to d_model, then /d_model & *ln10000 
         div = torch.exp(torch.arange(0, d_model, 2).float()/d_model * -math.log(10000)) # (d_model//2)
@@ -42,7 +42,7 @@ class PositionalEncodings(nn.Module):
         pe_matrix[:, 1::2] = torch.cos(pos * div) #select all row, col frm 1 with step 2
 
         #add batch dimension
-        pe_matrix = pe_matrix.unsqueeze(0) #(1, seq_len, d_model). 1 is batch_size
+        pe_matrix = pe_matrix.unsqueeze(0) #(1, max_len, d_model). 1 is batch_size
 
         self.register_buffer("pe_matrix", pe_matrix) #tensor not parameter, but saved in state
     
@@ -80,9 +80,28 @@ class MultiheadAttentionBlock(nn.Module):
 
         return attention_scores @ V
 
-class Transformer(nn.Transformer): # nn.Transformer doesn't have input embedding & pos encoding
-    def __init__(self):
-        super().__init__()
+class Transformer(nn.Transformer):
+
+    def __init__(self, vocab_size, d_model, head, nhid, nlayers, dropout=0.5):
+
+        #initialises nn.Transformer with following parameters
+        super().__init__(
+            d_model=d_model, nhead=head, dim_feedforward=nhid,
+            num_encoder_layers=nlayers, dropout=droupout
+        )
+
+        self.model_type = 'Transformer' #simple labelling attribute
+
+        self.mask = None # masking
+
+        self.pos_encoder = PositionalEncodings(d_model ,dropout)
+
+
+        self.embedding_matrix = nn.Embedding()
+        
+
+    
+
 
         
 
