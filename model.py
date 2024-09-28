@@ -94,31 +94,37 @@ class Transformer(nn.Transformer):
         self.init_weights() #custom weight initialisation
         self.projection_layer = nn.Linear(d_model, vocab_size) #projects embedding to vocab_size for softmax
 
-    def init_weights():
-        initrange = 0.1
-        #uniform initialisation for embedding matrix
-        nn.init.uniform_(self.embedding_marix.weight, -initrange, initrange)
-        # zero initialisation for projection layer biases
-        nn.init.zeros_(self.projection_layer.bias)
-        # uniform intialisation for projection layer's weights
-        nn.init.uniform_(self.projection_layer.weight, -initrange, initrange)
+        def init_weights():
+            initrange = 0.1
+            #uniform initialisation for embedding matrix
+            nn.init.uniform_(self.embedding_marix.weight, -initrange, initrange)
+            # zero initialisation for projection layer biases
+            nn.init.zeros_(self.projection_layer.bias)
+            # uniform intialisation for projection layer's weights
+            nn.init.uniform_(self.projection_layer.weight, -initrange, initrange)
 
     def forward(self, src, tgt, src_mask, tgt_mask): # src = seq to encoder, tgt = seq to encoder 
+        # src -> [seq_len, batch_size]
 
         #embedding for encoder & decoder inputs
         src = self.embedding(src) * math.sqrt(self.d_model)
         tgt = self.embedding(tgt) * math.sqrt(self.d_model)
+        # src, tgt -> [seq_len, batch_size, d_model]
 
         # add positional_encoding
         src = self.pos_encoder(src)
         tgt = self.pos_encoder(tgt)
+        # same shape
         
         #pass src & tgt through the transformer, with masking
         # outputs the output embeddings
-        output_embeddings = self.transformer(src, tgt, src_mask=src_mask, tgt_mask = tgt_mask)
+        output_embeddings = super().forward(src, tgt, src_mask=src_mask, tgt_mask = tgt_mask)
 
+        
+        #(1, )
         output_logits = self.projection_layer(output_embeddings)
 
+        #apply log_softmax across dimension -1 of the output logits
         return F.log_softmax(output_logits, dim=-1)
 
     # Function to generate the decoder mask to prevent looking at future tokens
